@@ -19,18 +19,33 @@ public class Map : MonoBehaviour {
 
 	public Player[] players;
 
+	public static string ToRGBHex(Color c)
+	{
+		return string.Format("#{0:X2}{1:X2}{2:X2}", ToByte(c.r), ToByte(c.g), ToByte(c.b));
+	}
+
+	private static byte ToByte(float f)
+	{
+		f = Mathf.Clamp01(f);
+		return (byte)(f * 255);
+	}
+
 	void Awake () {
 		colour2country = new Dictionary<Color, Country> ();
 		foreach (Country country in GetComponentsInChildren <Country> ()) {
 			colour2country [country.colour] = country;
 		}
 
+		HashSet<Color> actualColours = new HashSet<Color> ();
+
 		Country newCountry = null;
+		Color lastDisplayedColour = Color.white;
 		Color lastColour = defaultColour;
 		Dictionary<Country, SummedVector2> summedPoints = new Dictionary<Country, SummedVector2> (); 
 		for (int y = 0; y < mapping.height; y++) {
 			for (int x = 0; x < mapping.width; x++) {
 				Color colour = mapping.GetPixel (x, y);
+
 				if ((lastColour == colour && newCountry != null) || (newCountry = FindCountryByColour(colour)) != null) {
 					lastColour = newCountry.colour;
 					Vector2 p = new Vector2 (x, y);

@@ -35,6 +35,7 @@ public class Country : MonoBehaviour {
 		text.transform.localPosition = new Vector3 (0, 0.05f, 0);
 
 		unitGenerationFactor = 1;
+		SetTextVisible (false);
 	}
 		
 	public void SetOwner (Player newOwner, int units) {

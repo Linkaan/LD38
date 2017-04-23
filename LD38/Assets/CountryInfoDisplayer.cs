@@ -18,6 +18,9 @@ public class CountryInfoDisplayer : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
+		if (map.colour2country == null)
+			return;
+
 		RaycastHit hit;
 		if (!Physics.Raycast (cam.ScreenPointToRay (Input.mousePosition), out hit))
 			return;
