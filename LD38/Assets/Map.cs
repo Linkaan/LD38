@@ -19,6 +19,8 @@ public class Map : MonoBehaviour {
 
 	public Player[] players;
 
+	public Player localPlayer;
+
 	public static string ToRGBHex(Color c)
 	{
 		return string.Format("#{0:X2}{1:X2}{2:X2}", ToByte(c.r), ToByte(c.g), ToByte(c.b));
@@ -84,6 +86,10 @@ public class Map : MonoBehaviour {
 		}
 
 		players = GameObject.FindObjectsOfType <Player> ();
+		foreach (Player player in players) {
+			if (!player.isAi)
+				localPlayer = player;
+		}
 	}
 		
 	public Country FindCountryByColour (Color colour) {

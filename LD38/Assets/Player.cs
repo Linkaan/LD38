@@ -231,9 +231,10 @@ public class Player : MonoBehaviour {
 					if (generalTurns == null) {
 						Debug.LogError ("NO SAFE PATH TO COUNTRY FOUND!");
 					} else {
-						foreach (Turn turn in generalTurns) {
+						foreach (Turn turn in generalTurns) {							
 							turnQueue.Enqueue (turn);
 						}
+						turnCounter.tqDisplayer.UpdateTurnDisplay (this);
 					}
 					return;
 				}
@@ -248,6 +249,8 @@ public class Player : MonoBehaviour {
 			if (attackingCountry.neighbours.Contains (country)) {
 				Turn newTurn = new Turn (turnCounter.turn + turnQueue.Count + 1, this, country.owner, attackingCountry, country, useOnlyHalfArmy);
 				turnQueue.Enqueue (newTurn);
+				turnCounter.tqDisplayer.UpdateTurnDisplay (this);
+
 				attackingCountry = null;
 			} else {
 				Debug.LogError ("YOU CAN ONLY ATTACK YOUR NEIGHBOURS!");

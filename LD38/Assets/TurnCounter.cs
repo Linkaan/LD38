@@ -8,15 +8,22 @@ public class TurnCounter : MonoBehaviour {
 	public int unitSpawnRate;
 	public float timeBetweenTurns;
 
+	public Map map;
+	public Leaderboard leaderboard;
+	public TurnQueueDisplayer tqDisplayer;
+
 	private float lastTurnTime;
 
-	// Use this for initialization
-	void Start () {
-		
-	}
+	private bool initalizedLeaderboard;
 	
 	// Update is called once per frame
 	void Update () {
+		if (!initalizedLeaderboard) {
+			initalizedLeaderboard = true;
+			leaderboard.UpdateLeaderboard (map);
+			tqDisplayer.UpdateTurnDisplay (map.localPlayer);
+		}
+
 		if ((Time.time - lastTurnTime) >= timeBetweenTurns) {
 			lastTurnTime = Time.time;
 			doTurn ();
@@ -48,5 +55,8 @@ public class TurnCounter : MonoBehaviour {
 				general.kill ();
 			}
 		}
+
+		leaderboard.UpdateLeaderboard (map);
+		tqDisplayer.UpdateTurnDisplay (map.localPlayer);
 	}
 }
