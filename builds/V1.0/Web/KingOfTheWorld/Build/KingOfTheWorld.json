@@ -1,0 +1,9 @@
+{
+"TOTAL_MEMORY": 268435456,
+"dataUrl": "KingOfTheWorld.data.unityweb",
+"asmCodeUrl": "KingOfTheWorld.asm.code.unityweb",
+"asmMemoryUrl": "KingOfTheWorld.asm.memory.unityweb",
+"asmFrameworkUrl": "KingOfTheWorld.asm.framework.unityweb",
+"splashScreenStyle": "Dark",
+"backgroundColor": "#222C36"
+}

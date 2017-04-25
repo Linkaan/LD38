@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Country : MonoBehaviour {
 
+	public Color selectedColour;
 	public Color colour;
 	public List<Vector2> pixels;
 	public Vector2 pivot;
@@ -25,6 +26,8 @@ public class Country : MonoBehaviour {
 	public bool textVisible;
 
 	private TextMesh text;
+
+	private bool isSelected;
 
 	void Start () {
 		cam = Camera.main;
@@ -71,6 +74,17 @@ public class Country : MonoBehaviour {
 		if (other.units <= 0) {
 			other.SetOwner (owner, remainder);
 		}
+	}
+
+	public void SetSelected (bool sel) {
+		if (sel == isSelected)
+			return;
+		isSelected = sel;
+		Color baseColour = owner != null ? owner.playerColour : map.defaultColour;
+		if (sel)
+			this.map.SetCountryPlayerColour (this, (baseColour + selectedColour) / 2);
+		else
+			this.map.SetCountryPlayerColour (this, baseColour);
 	}
 		
 	void FixedUpdate () {		

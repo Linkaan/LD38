@@ -38,8 +38,6 @@ public class Map : MonoBehaviour {
 			colour2country [country.colour] = country;
 		}
 
-		HashSet<Color> actualColours = new HashSet<Color> ();
-
 		Country newCountry = null;
 		Color lastDisplayedColour = Color.white;
 		Color lastColour = defaultColour;
@@ -90,6 +88,13 @@ public class Map : MonoBehaviour {
 			if (!player.isAi)
 				localPlayer = player;
 		}
+
+		localPlayer.toastManager.DisplayToast ("Press M/N to mute/unmute SFX/music", 4);
+	}
+
+	public void ResetTurnQueueForLocalPlayer () {
+		this.localPlayer.turnQueue.Clear ();
+		this.localPlayer.turnCounter.tqDisplayer.UpdateTurnDisplay (this.localPlayer);
 	}
 		
 	public Country FindCountryByColour (Color colour) {

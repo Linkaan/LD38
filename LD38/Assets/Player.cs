@@ -11,6 +11,8 @@ public class Player : MonoBehaviour {
 	public GameObject general;
 	public General generalComponent;
 
+	public ToastManager toastManager;
+
 	public Color playerColour;
 	public Color generalColour;
 	public Map map;
@@ -22,10 +24,23 @@ public class Player : MonoBehaviour {
 
 	public bool isAlive;
 
-	private Country attackingCountry;
-	private bool useOnlyHalfArmy;
+	public FollowMouse mouseFollower;
+
+	public Country attackingCountry;
+	public bool useOnlyHalfArmy;
+	public bool generalSelected;
+
+	public bool canInteract;
+
+	public AudioSource audioSource;
+
+	public AudioClip selectedSFX;
+	public AudioClip[] newTurnSFX;
+	public AudioClip attackedSFX;
+	public AudioClip[] generalSelectedSFX;
+	public AudioClip goodbyeSFX;
+
 	private bool moveToNewCountry;
-	private bool generalSelected;
 
 	private float journeyTime;
 	private float journeyStartTime;
@@ -37,13 +52,21 @@ public class Player : MonoBehaviour {
 	private Vector3 journeyDirection;
 	private Vector3 avgPoint;
 
+	private bool draggingMouse;
+	private bool currentlyDraggingMouse;
+	private Vector3 mouseStartPos;
+
+	private bool sfxMute;
+
 	// Use this for initialization
 	void Start () {
+		audioSource = this.GetComponent<AudioSource> ();
 		Country[] countries = map.colour2country.Values.ToArray ();
 		do {
 			generalHome = countries [Random.Range (0, countries.Length - 1)];
 		} while (generalHome.owner != null || checkPlayerIsNeighbour (generalHome));
 		generalHome.SetOwner (this, map.unitStartCount);
+		generalHome.unitGenerationFactor = 2;
 
 		general = Instantiate (generalPrefab, generalHome.center, Quaternion.identity, this.transform);
 		general.transform.LookAt (generalHome.center + generalHome.facing);
@@ -54,6 +77,42 @@ public class Player : MonoBehaviour {
 
 		turnQueue = new Queue<Turn> ();
 		isAlive = true;
+		canInteract = true;
+	}
+
+	public void PlayGeneralSelectedSFX () {
+		if (isAi || sfxMute)
+			return;
+		this.audioSource.clip = generalSelectedSFX [Random.Range (0, generalSelectedSFX.Length)];
+		this.audioSource.Play ();
+	}
+
+	public void PlayCountrySelectedSFX () {
+		if (isAi || sfxMute)
+			return;
+		this.audioSource.clip = selectedSFX;
+		this.audioSource.Play ();
+	}
+
+	public void PlayAttackedSFX () {
+		if (isAi || sfxMute)
+			return;
+		this.audioSource.clip = attackedSFX;
+		this.audioSource.Play ();
+	}
+
+	public void PlayNewTurnSFX () {
+		if (isAi || sfxMute)
+			return;
+		this.audioSource.clip = newTurnSFX [Random.Range (0, newTurnSFX.Length)];
+		this.audioSource.Play ();
+	}
+
+	public void PlayGoodByeSFX () {
+		if (isAi || sfxMute)
+			return;
+		this.audioSource.clip = goodbyeSFX;
+		this.audioSource.Play ();
 	}
 
 	public bool checkPlayerIsNeighbour (Country country) {
@@ -73,15 +132,22 @@ public class Player : MonoBehaviour {
 		if (turnQueue.Count == 0)
 			return;
 
-		Turn turn = turnQueue.Dequeue ();
+		Turn turn = null;
 
-		Debug.Log ("prediction correct: " + (turn.turnCount == turnCount).ToString());
+		do {
+			turn = turnQueue.Dequeue ();
+		} while (turnQueue.Count > 0 && turn == null);
+
+		if (turn == null)
+			return;
 
 		if (turn.doMoveGeneral) {
-			if (generalHome.neighbours.Contains (turn.attackedCountry)) {
+			if (generalHome.neighbours.Contains (turn.attackedCountry) && turn.attackedCountry.owner == this) {
 				moveGeneral (turn.attackedCountry);
-			} else {
-				Debug.LogError ("PATH NO LONGER AVAILABLE");
+			} else if (turn.attackedCountry != null) {
+				if (!isAi) {
+					toastManager.DisplayToast ("General can't move to " + turn.attackedCountry.name + "!", 5);
+				}
 				while (turnQueue.Count > 0) {
 					Turn newTurn = turnQueue.Peek ();
 					if (newTurn.doMoveGeneral)
@@ -91,16 +157,32 @@ public class Player : MonoBehaviour {
 				}
 			}
 		} else {
-			turn.attackingCountry.attack (turn.attackedCountry, turn.useOnlyHalfArmy);
+			if (turn.attackingCountry.owner != this) {
+				if (!isAi) {
+					toastManager.DisplayToast ("You no longer own " + turn.attackingCountry.name + "!", 5);
+				}
+			} else {
+				if (turn.attackedPlayer != null && !turn.attackedPlayer.isAi && turn.attackedCountry.owner != turn.attackedPlayer) {
+					turn.attackedPlayer.toastManager.DisplayToast (turn.attackedCountry.name + " was attacked from " + turn.attackingCountry.name, 5);
+					turn.attackedPlayer.PlayAttackedSFX ();
+				} else if (turn.attackedCountry.owner != this) {
+					this.PlayAttackedSFX ();
+				}
+				turn.attackingCountry.attack (turn.attackedCountry, turn.useOnlyHalfArmy);
+			}
 		}
 	}
 	
 	void Update () {
-		if (!isAlive)
+		if (!isAlive || !canInteract)
 			return;
 
-		if (!isAi)
+		if (!isAi) {
+			if (Input.GetKeyDown (KeyCode.M)) {
+				sfxMute = !sfxMute;
+			}
 			selectCountryUpdate ();
+		}
 
 		if (moveToNewCountry) {
 
@@ -197,16 +279,51 @@ public class Player : MonoBehaviour {
 	}
 
 	void selectCountryUpdate () {
-		if (!Input.GetMouseButtonDown (1))
+
+		if (Input.GetMouseButtonDown (0)) {
+			draggingMouse = true;
+			mouseStartPos = Input.mousePosition;
+		}
+
+		if (Input.GetMouseButton (0) && (currentlyDraggingMouse || (draggingMouse && mouseStartPos != Input.mousePosition))) {
+			currentlyDraggingMouse = true;
+			mouseFollower.showCursorDragging ();
+		} else if (attackingCountry == null && !generalSelected) {
+			mouseFollower.showCursorPointing ();
+		}
+
+		if (Input.GetKeyDown (KeyCode.Escape)) {
+			generalSelected = false;
+
+			if (attackingCountry != null) {
+				foreach (Country neighbour in attackingCountry.neighbours) {
+					neighbour.SetSelected (false);
+				}
+			}
+
+			attackingCountry = null;
+			useOnlyHalfArmy = false;
+		}
+
+		if (Input.GetMouseButtonUp (0)) {			
+			mouseFollower.showCursorPointing ();
+			if (currentlyDraggingMouse) {
+				currentlyDraggingMouse = false;
+				return;
+			}
+			currentlyDraggingMouse = false;
+		} else if (attackingCountry == null && !generalSelected)/* if ((currentlyDraggingMouse || (draggingMouse && mouseStartPos != Input.mousePosition))) */{
 			return;
+		}
 		
 		RaycastHit hit;
 		if (!Physics.Raycast (map.cam.ScreenPointToRay (Input.mousePosition), out hit))
 			return;
 
-		if (hit.transform.tag == "general" && hit.transform.gameObject.GetComponent<General> ().owner == this) {
+		if (Input.GetMouseButtonUp (0) && hit.transform.tag == "general" && hit.transform.gameObject.GetComponent<General> ().owner == this) {
 			generalSelected = true;
-			Debug.Log ("selected general");
+			mouseFollower.showCursorMove ();
+			PlayGeneralSelectedSFX ();
 			return;
 		}
 
@@ -217,19 +334,42 @@ public class Player : MonoBehaviour {
 		Color pix = map.mapping.GetPixel ((int)pixelUV.x, (int)pixelUV.y);
 
 		Country country = map.FindCountryByColour (pix);
+
+		if (attackingCountry != null || generalSelected) {
+			if (useOnlyHalfArmy)
+				mouseFollower.showCursorAttack50 ();
+			else {
+				if (generalSelected || (country != null && country.owner == this)) {
+					mouseFollower.showCursorMove ();
+				} else {
+					mouseFollower.showCursorAttack ();
+				}
+			}
+		} else {
+			mouseFollower.showCursorPointing ();
+		}
+
+		if (!Input.GetMouseButtonUp (0))
+			return;
+
 		if (attackingCountry == null || generalSelected) {
-			if (country == null || country.owner != this) {				
-				Debug.LogError ("YOU MUST FIRST SELECT THE ATTACKING COUNTRY!");
+			if (country == null) {				
+				toastManager.DisplayToast ("That is not a country!", 5);
+			} else if (country.owner != this) {
+				toastManager.DisplayToast ("You don't own that country (" + country.name + ")!", 5);
 			} else {
-				if (generalSelected && attackingCountry == null)
+				if (generalSelected && country == null) {
 					generalSelected = false;
+					return;
+				}
 				
 				if (generalSelected) {
 					generalSelected = false;
 					attackingCountry = null;
 					Turn[] generalTurns = findTurnPathToCountry (generalHome, country);
+					PlayNewTurnSFX ();
 					if (generalTurns == null) {
-						Debug.LogError ("NO SAFE PATH TO COUNTRY FOUND!");
+						toastManager.DisplayToast ("General could not find a safe path to " + country.name + "!", 5);
 					} else {
 						foreach (Turn turn in generalTurns) {							
 							turnQueue.Enqueue (turn);
@@ -239,49 +379,31 @@ public class Player : MonoBehaviour {
 					return;
 				}
 				attackingCountry = country;	
+				foreach (Country neighbour in attackingCountry.neighbours) {
+					neighbour.SetSelected (true);
+				}
+				PlayCountrySelectedSFX ();
 			}
 		} else if (country != null) {			
 			if (attackingCountry == country) {
-				useOnlyHalfArmy = true;
-				Debug.Log ("using 50% of army");
+				useOnlyHalfArmy = !useOnlyHalfArmy;
 				return;
 			}
 			if (attackingCountry.neighbours.Contains (country)) {
 				Turn newTurn = new Turn (turnCounter.turn + turnQueue.Count + 1, this, country.owner, attackingCountry, country, useOnlyHalfArmy);
 				turnQueue.Enqueue (newTurn);
+				PlayNewTurnSFX ();
 				turnCounter.tqDisplayer.UpdateTurnDisplay (this);
 
+				foreach (Country neighbour in attackingCountry.neighbours) {
+					neighbour.SetSelected (false);
+				}
 				attackingCountry = null;
 			} else {
-				Debug.LogError ("YOU CAN ONLY ATTACK YOUR NEIGHBOURS!");
+				toastManager.DisplayToast ("Can't attack " + country.name + " from " + attackingCountry.name + "!", 5);
 			}
 			useOnlyHalfArmy = false;
 		}
-	}
-
-	void DisplayArrow (Country A, Country B) {
-		if (A == null || B == null) {
-			arrow.SetActive (false);
-			return;
-		}
-		arrow.SetActive (true);
-
-		Vector3 avgCenter = (A.center + B.center) / 2.5f;
-		Vector3 direction;
-		Vector2 avgPoint = findClosestPivotPoint (avgCenter, out direction);
-
-		if (avgPoint == Vector2.zero) {
-			Debug.LogError ("could not find closest pivot point!");
-			return;
-		}
-
-		Vector3 origin = map.UvTo3D (avgPoint, map.GetComponent<MeshFilter> ().mesh) + direction * 0.1f;
-		Vector3 heading = B.center - origin;
-
-		float distance = heading.magnitude;
-
-		arrow.transform.position = origin;
-		arrow.transform.LookAt (heading / distance);
 	}
 
 	Vector2 findClosestPivotPoint (Vector3 avgCenter, out Vector3 dir) {

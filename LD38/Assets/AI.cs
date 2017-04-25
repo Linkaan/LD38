@@ -40,6 +40,8 @@ public class AI : MonoBehaviour {
 	}
 
 	public void ProcessTurn (int turnCount) { // start coroutine
+		if (player == null)
+			return;
 		if (processingTurn) {
 			Debug.LogWarning ("AI LAGGING BEHIND!!!");
 			return;
@@ -67,7 +69,7 @@ public class AI : MonoBehaviour {
 					bestValue2 = Mathf.Max (bestValue2, v);
 				}
 
-				yield return new WaitForEndOfFrame();
+				//yield return new WaitForEndOfFrame();
 			}
 
 			if (bestValue2 > 1000) {				
@@ -92,6 +94,7 @@ public class AI : MonoBehaviour {
 		}
 		processingTurn = false;
 		Debug.Log ("it took " + (Time.time - startTime) + " seconds to calculate AI move");
+		yield return null;
 	}
 
 	public void printAIMove (Turn turn) {

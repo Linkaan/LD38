@@ -14,7 +14,13 @@ public class CountryInfoDisplayer : MonoBehaviour {
 	public Camera cam;
 	public Map map;
 
+	public bool isDisplaying;
+
 	private Country country;
+
+	void Start () {
+		countryDisplayPanel.SetActive (false);
+	}
 	
 	// Update is called once per frame
 	void FixedUpdate () {
@@ -43,6 +49,8 @@ public class CountryInfoDisplayer : MonoBehaviour {
 
 		country = map.FindCountryByColour (pix);
 		countryDisplayPanel.SetActive (country != null);
+
+		isDisplaying = country != null;
 
 		if (country == null) {
 			return;

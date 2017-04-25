@@ -39,13 +39,13 @@ public class WorldState {
 					countriesOwnedByPlayer [country.owner] = new List<Country> ();
 				}
 				countriesOwnedByPlayer [country.owner].Add (country);
-
-				int[] unitValues = new int[2];
-				unitValues [0] = country.units;
-				unitValues [1] = country.unitGenerationFactor;
-
-				countriesUnitCountAndProduction [country] = unitValues;
 			}
+
+			int[] unitValues = new int[2];
+			unitValues [0] = country.units;
+			unitValues [1] = country.unitGenerationFactor;
+
+			countriesUnitCountAndProduction [country] = unitValues;
 		}
 
 		this.whoWon = null;
@@ -92,6 +92,13 @@ public class WorldState {
 		}
 
 		Dictionary<General, Country> generalPositions = new Dictionary<General, Country> (this.generalPositions);
+
+		Player currentOwner = getPlayerThatOwnsCountry (turn.attackedCountry);
+		if (currentOwner != null && generalPositions [currentOwner.generalComponent] == turn.attackedCountry) {
+			countriesUnitCountAndProduction [turn.attackedCountry] [1] = 2;
+		} else {
+			countriesUnitCountAndProduction [turn.attackedCountry] [1] = 1;
+		}
 
 		if (turn.turnCount % map.turnCounter.unitSpawnRate == 0) {
 			foreach (Country country in countriesUnitCountAndProduction.Keys) {

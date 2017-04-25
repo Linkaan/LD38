@@ -16,6 +16,8 @@ public class GlobeRotater : MonoBehaviour {
 	public Player player;
 	public Camera cam;
 
+	public bool canInteract;
+
 	private float momentum;
 
 	private float startX;
@@ -44,10 +46,13 @@ public class GlobeRotater : MonoBehaviour {
 		Vector3 mousePos = Input.mousePosition;
 		startPos = cam.transform.localPosition;
 		endPos = startPos - Vector3.forward * maxZoom;
-
+		canInteract = true;
 	}
 	
 	void Update () {
+		if (!canInteract)
+			return;
+
 		if (Input.GetMouseButtonDown (0)) {
 			startX = Input.GetAxis ("Mouse X");
 			startY = Input.GetAxis ("Mouse Y");
@@ -97,7 +102,20 @@ public class GlobeRotater : MonoBehaviour {
 		}
 	}
 
+	public void LookAtGeneral (bool doOverride) {
+		if (doOverride) {
+			startRotation = target.rotation;
+			lookAtStartTime = Time.time;
+			lookAtGoalRotation = Quaternion.LookRotation (player.general.transform.position - target.position);
+			lookAtJourneyLength = Quaternion.Angle (startRotation, lookAtGoalRotation);
+			lookAtJourneyTime = Mathf.Min (lookAtJourneyLength / 180.0f, 1.0f);
+			lookAtGoal = true;
+		}
+	}
+
 	public void LookAtGeneral () {
+		if (!player.isAlive)
+			return;
 		startRotation = target.rotation;
 		lookAtStartTime = Time.time;
 		lookAtGoalRotation = Quaternion.LookRotation (player.general.transform.position - target.position);

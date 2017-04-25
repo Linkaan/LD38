@@ -36,7 +36,10 @@ public class TurnQueueDisplayer : MonoBehaviour {
 				if (turn.useOnlyHalfArmy) {
 					action [i].overrideSprite = attack50Action;
 				} else {
-					action [i].overrideSprite = attackAction;
+					if (turn.attackedCountry.owner != turn.player)
+						action [i].overrideSprite = attackAction;
+					else
+						action [i].overrideSprite = moveAction;
 				}
 			}
 		}
