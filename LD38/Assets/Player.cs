@@ -6,7 +6,7 @@ using UnityEngine;
 public class Player : MonoBehaviour {
 
 	public GameObject generalPrefab;
-	public GameObject arrow;
+	public GlobeRotater globeRotater;
 	public Country generalHome;
 	public GameObject general;
 	public General generalComponent;
@@ -162,7 +162,7 @@ public class Player : MonoBehaviour {
 					toastManager.DisplayToast ("You no longer own " + turn.attackingCountry.name + "!", 5);
 				}
 			} else {
-				if (turn.attackedPlayer != null && !turn.attackedPlayer.isAi && turn.attackedCountry.owner != turn.attackedPlayer) {
+				if (this.isAi && turn.attackedPlayer != null && !turn.attackedPlayer.isAi/* && turn.attackedCountry.owner != turn.attackedPlayer*/) {
 					turn.attackedPlayer.toastManager.DisplayToast (turn.attackedCountry.name + " was attacked from " + turn.attackingCountry.name, 5);
 					turn.attackedPlayer.PlayAttackedSFX ();
 				} else if (turn.attackedCountry.owner != this) {
@@ -174,8 +174,27 @@ public class Player : MonoBehaviour {
 	}
 	
 	void Update () {
-		if (!isAlive || !canInteract)
+		if (!isAlive || !canInteract || turnCounter.hasWon) {
+			if (!isAi && (canInteract || globeRotater.canInteract)) {
+				if (Input.GetMouseButtonDown (0)) {
+					draggingMouse = true;
+					mouseStartPos = Input.mousePosition;
+				}
+
+				if (Input.GetMouseButton (0) && (currentlyDraggingMouse || (draggingMouse && mouseStartPos != Input.mousePosition))) {
+					currentlyDraggingMouse = true;
+					mouseFollower.showCursorDragging ();
+				} else if (attackingCountry == null && !generalSelected) {
+					mouseFollower.showCursorPointing ();
+				}
+
+				if (Input.GetMouseButtonUp (0)) {			
+					mouseFollower.showCursorPointing ();
+					currentlyDraggingMouse = false;
+				}
+			}
 			return;
+		}
 
 		if (!isAi) {
 			if (Input.GetKeyDown (KeyCode.M)) {
@@ -305,8 +324,9 @@ public class Player : MonoBehaviour {
 			useOnlyHalfArmy = false;
 		}
 
-		if (Input.GetMouseButtonUp (0)) {			
-			mouseFollower.showCursorPointing ();
+		if (Input.GetMouseButtonUp (0)) {
+			if (mouseFollower.image.overrideSprite == mouseFollower.dragging)
+				mouseFollower.showCursorPointing ();
 			if (currentlyDraggingMouse) {
 				currentlyDraggingMouse = false;
 				return;

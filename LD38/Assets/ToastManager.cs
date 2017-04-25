@@ -15,14 +15,25 @@ public class ToastManager : MonoBehaviour {
 
 	private bool showForever;
 
+	private float delay;
+	private bool showDelayed;
+
 	void Update () {
 		if (!showForever && (isDisplaying && (Time.time - startTime) > duration)) {
 			isDisplaying = false;
 			toast.SetActive (false);
 		}
+
+		if (showDelayed && (Time.time - startTime) > delay) {
+			showDelayed = false;
+			startTime = Time.time;
+			isDisplaying = true;
+			toast.SetActive (true);
+		}
 	}
 
 	public void DisplayToast (string text, float duration) {
+		this.showDelayed = false;
 		this.duration = duration;
 		this.startTime = Time.time;
 
@@ -34,6 +45,20 @@ public class ToastManager : MonoBehaviour {
 
 		isDisplaying = true;
 		toast.SetActive (true);
+		toastText.text = text;
+	}
+
+	public void DisplayToastDelayed (string text, float duration, float delay) {
+		this.delay = delay;
+		this.showDelayed = true;
+		this.startTime = Time.time;
+
+		if (duration < 0) {
+			showForever = true;
+		} else {
+			showForever = false;
+		}
+
 		toastText.text = text;
 	}
 }

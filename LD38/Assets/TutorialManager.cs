@@ -245,7 +245,7 @@ public class TutorialManager : MonoBehaviour {
 			case 36:
 				SetCanInteract (true);
 				doNotIncrementState = true;
-				DisplayToast ("Try clicking on " + player.generalHome.name, 0.5f);
+				DisplayToast ("Try clicking on " + player.generalHome.name + " that your general stands on (the red country)", 0.5f);
 				state += 1;
 				break;
 			case 37:

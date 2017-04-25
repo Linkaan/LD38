@@ -264,7 +264,7 @@ public class WorldState {
 
 	Player getPlayerThatOwnsCountry (Country country) {
 		foreach (Player player in playersAlive) {
-			if (countriesOwnedByPlayer [player].Contains (country))
+			if (countriesOwnedByPlayer.ContainsKey (player) && countriesOwnedByPlayer [player].Contains (country))
 				return player;
 		}
 		return null;

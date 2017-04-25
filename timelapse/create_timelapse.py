@@ -22,7 +22,7 @@ def format_date(secs):
 def add_timestamp(filename, new_basename):
     start = time.time()
     old_file = os.path.join("./images", filename)
-    secs = os.path.getmtime(old_file)
+    secs = os.path.getmtime(old_file) - 7200
     dt_formatted = format_date(secs)
     new_path = "./archive"
     if not os.path.exists(new_path):
