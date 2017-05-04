@@ -189,11 +189,11 @@ public class TutorialManager : MonoBehaviour {
 				handledState = true;
 				break;
 			case 25:
-				DisplayToast ("You can only do ONE action per turn", 0.5f);
+				DisplayToast ("Only one action will be performed each turn, but you can queue as many actions as you want.", 0.5f);
 				handledState = true;
 				break;
 			case 26:
-				DisplayToast ("The current turn queue is displayed in the bottom left corner", 0.5f);
+				DisplayToast ("The current turn queue is displayed in the bottom left corner, the slider above indicates when the next turn ends", 0.5f);
 				tqDisplayer.SetActive (true);
 				handledState = true;
 				break;

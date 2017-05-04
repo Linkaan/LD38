@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UI;
 using UnityEngine;
 
 public class TurnCounter : MonoBehaviour {
@@ -8,17 +9,29 @@ public class TurnCounter : MonoBehaviour {
 	public int unitSpawnRate;
 	public float timeBetweenTurns;
 
+	public Image slider;
+
 	public Map map;
 	public Leaderboard leaderboard;
 	public TurnQueueDisplayer tqDisplayer;
 
 	public WinManager winManager;
 
+	public Player[] allPlayers;
+
 	public bool hasWon;
 
 	private float lastTurnTime;
 
+	private int timeBetweenTurnsInMs;
+
 	private bool initalizedLeaderboard;
+
+	void Start () {
+		timeBetweenTurnsInMs = (int)(1000 * timeBetweenTurns);
+		lastTurnTime = Time.time;
+		allPlayers = GameObject.FindObjectsOfType <Player> ();
+	}
 	
 	// Update is called once per frame
 	void Update () {
@@ -29,8 +42,14 @@ public class TurnCounter : MonoBehaviour {
 			initalizedLeaderboard = true;
 			leaderboard.UpdateLeaderboard (map);
 			tqDisplayer.UpdateTurnDisplay (map.localPlayer);
+
+			foreach (Player player in allPlayers) {
+				if (player.isAlive && player.isAi)
+					player.ProcessAITurn (turn);
+			}
 		}
 
+		slider.fillAmount = ((int)(1000 * (Time.time - lastTurnTime)) % timeBetweenTurnsInMs) / (float) timeBetweenTurnsInMs;
 		if ((Time.time - lastTurnTime) >= timeBetweenTurns) {
 			lastTurnTime = Time.time;
 			doTurn ();
@@ -57,9 +76,30 @@ public class TurnCounter : MonoBehaviour {
 			}
 		}
 
-		foreach (Player player in GameObject.FindObjectsOfType<Player> ()) {
+		foreach (Player player in allPlayers) {
+			if (player.isAlive && player.turnQueue.Count > 0) {
+				if (player.turnQueue.Peek ().doMoveGeneral) {
+					player.nextTurnPriority = 3;
+				} else if (player.turnQueue.Peek ().attackedPlayer == player) {
+					player.nextTurnPriority = 2;
+				} else {
+					player.nextTurnPriority = 1;
+				}
+			} else {
+				player.nextTurnPriority = -1;
+			}
+		}
+
+		List<Player> allPlayersTemp = new List<Player> (allPlayers);
+		allPlayersTemp.Sort((x, y) => x.nextTurnPriority.CompareTo(y.nextTurnPriority));
+		foreach (Player player in allPlayersTemp) {
 			if (player.isAlive)
 				player.ProcessTurn (turn);
+		}
+
+		foreach (Player player in allPlayers) {
+			if (player.isAlive && player.isAi)
+				player.ProcessAITurn (turn);
 		}
 
 		int generalCount = 0;

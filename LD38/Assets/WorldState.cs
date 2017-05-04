@@ -201,7 +201,7 @@ public class WorldState {
 		}
 
 		foreach (Player p in playersAlive) {
-			if (p == forPlayer)
+			if (p == forPlayer || !countriesOwnedByPlayer.ContainsKey (p))
 				continue;
 			foreach (Country country in countriesOwnedByPlayer[p]) {
 				if (country.neighbours.Contains (generalPositions [forPlayer.generalComponent])) {
@@ -235,7 +235,7 @@ public class WorldState {
 	List<Turn> getPossibleTurns (Player player, int turnCount) {
 		List<Turn> possibleTurns = new List<Turn> ();
 
-		if (!playersAlive.Contains (player))
+		if (!playersAlive.Contains (player) || !countriesOwnedByPlayer.ContainsKey (player))
 			return possibleTurns;
 
 		foreach (Country country in countriesOwnedByPlayer[player]) {

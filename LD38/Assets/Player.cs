@@ -21,7 +21,6 @@ public class Player : MonoBehaviour {
 	public Queue<Turn> turnQueue;
 
 	public bool isAi;
-
 	public bool isAlive;
 
 	public FollowMouse mouseFollower;
@@ -30,6 +29,7 @@ public class Player : MonoBehaviour {
 	public bool useOnlyHalfArmy;
 	public bool generalSelected;
 
+	public int nextTurnPriority;
 	public bool canInteract;
 
 	public AudioSource audioSource;
@@ -123,12 +123,13 @@ public class Player : MonoBehaviour {
 		return false;
 	}
 
-	public void ProcessTurn (int turnCount) {
-
+	public void ProcessAITurn (int turnCount) {
 		if (isAi) {
 			GetComponent<AI> ().ProcessTurn (turnCount);
 		}
+	}
 
+	public void ProcessTurn (int turnCount) {
 		if (turnQueue.Count == 0)
 			return;
 
